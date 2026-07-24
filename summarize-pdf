@@ -1,0 +1,84 @@
+#!/bin/zsh
+# Summarize PDFs with TAMU AI. Called from the Finder Quick Action or directly.
+#
+#   summarize-pdf [--no-open] [-m MODEL] paper.pdf [more.pdf ...]
+#
+# Each summary is written next to its PDF as <name>_summary.txt.
+
+emulate -L zsh
+
+SUMMARIZER=${0:A:h}/summarize_pdf.py
+LOG=$HOME/Library/Logs/summarize-pdf.log
+
+# Automator's shell sources ~/.zshenv, so the API key is normally already here.
+# Re-source only if something launched us without it (e.g. a `zsh -f` context).
+if [[ -z ${TAMU_AI_API_KEY:-} && -r $HOME/.zshenv ]]; then
+    source $HOME/.zshenv
+fi
+
+notify() {
+    # Passed as arguments, not interpolated -- filenames may contain quotes.
+    osascript -e 'on run {t, m}' -e 'display notification m with title t' \
+              -e 'end run' "$1" "$2" >/dev/null 2>&1
+}
+
+die() {
+    print -r -- "[$(date '+%F %T')] $1" >>$LOG
+    notify "Summarize PDF — failed" "$1"
+    exit 1
+}
+
+# Find a Python that actually has the libraries. The system python3 usually does
+# not, and a GUI-launched process gets a minimal PATH, so search explicitly.
+# Override with $SUMMARIZE_PDF_PYTHON.
+typeset -a candidates=(
+    ${SUMMARIZE_PDF_PYTHON:-}
+    $HOME/miniconda3/bin/python3
+    $HOME/anaconda3/bin/python3
+    /opt/homebrew/bin/python3
+    /usr/local/bin/python3
+    $(command -v python3 2>/dev/null)
+)
+PYTHON=
+for c in $candidates; do
+    [[ -n $c && -x $c ]] || continue
+    $c -c 'import requests' >/dev/null 2>&1 || continue
+    if $c -c 'import fitz' >/dev/null 2>&1 || $c -c 'import pdfplumber' >/dev/null 2>&1; then
+        PYTHON=$c
+        break
+    fi
+done
+
+[[ -n $PYTHON ]] || die "No Python with 'requests' and 'pymupdf'. Install them, or set SUMMARIZE_PDF_PYTHON."
+[[ -r $SUMMARIZER ]] || die "summarize_pdf.py not found next to this script"
+
+# Split flags from filenames so options (e.g. --no-open, -m MODEL) pass through.
+typeset -a opts files
+for a in "$@"; do
+    if [[ $a == -* ]]; then opts+=("$a"); else files+=("$a"); fi
+done
+(( $#files )) || die "No PDF given."
+
+integer ok=0 fail=0
+for f in "${files[@]}"; do
+    print -r -- "[$(date '+%F %T')] START $f" >>$LOG
+    if err=$("$PYTHON" "$SUMMARIZER" "${opts[@]}" "$f" 2>&1 >/dev/null); then
+        print -r -- "  $err" >>$LOG
+        (( ok++ ))
+    else
+        print -r -- "  FAILED: $err" >>$LOG
+        (( fail++ ))
+        # Show the last line -- that's the actual error, not the progress chatter.
+        notify "Summarize PDF — failed" "${f:t}: ${${(f)err}[-1]}"
+    fi
+done
+
+if (( fail == 0 )); then
+    if (( ok == 1 )); then
+        notify "Summarize PDF" "Summary written next to the PDF."
+    else
+        notify "Summarize PDF" "$ok summaries written."
+    fi
+fi
+
+(( fail == 0 ))

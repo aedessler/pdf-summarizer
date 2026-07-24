@@ -1,0 +1,10 @@
+# Papers and their summaries -- test data, not source.
+*.pdf
+*_summary.txt
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
