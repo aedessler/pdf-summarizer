@@ -51,6 +51,8 @@ Be concrete and specific: name the actual methods, datasets, and numbers used in
 this paper. If the paper does not report something, say so rather than guessing. \
 Separate the three paragraphs with a blank line. Do not label them.
 
+Expand acronyms the first time you mention them.
+
 Here is the full text of the paper:
 
 <paper>

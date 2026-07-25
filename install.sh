@@ -21,6 +21,7 @@ cp "$HERE/summarize-pdf"     "$BIN/summarize-pdf"
 cp "$HERE/summarize_pdf.py"  "$BIN/summarize_pdf.py"
 chmod +x "$BIN/summarize-pdf"
 print "  ✓ $BIN/summarize-pdf"
+print "  ✓ $BIN/summarize_pdf.py"
 
 # Bundled TAMU AI client, if this checkout has one. Without it the script falls
 # back to ~/.claude/skills/tamu-ai/scripts/tamu_ai.py.
