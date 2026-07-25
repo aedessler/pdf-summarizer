@@ -4,10 +4,6 @@ Reads a PDF and writes a three-paragraph summary — methods, data, results — 
 `.txt` file next to it. Summarization runs on Texas A&M's LLM gateway
 (`chat-api.tamu.ai`), which is free to TAMU affiliates with a NetID.
 
-```
-Lamp and Samano 2022.pdf   →   Lamp and Samano 2022_summary.txt
-```
-
 ## Install
 
 ```bash
@@ -111,13 +107,7 @@ diff summarize_pdf.py ~/.local/bin/summarize_pdf.py && echo "in sync"
 
 No script in this repo contains the key — it is read from `TAMU_AI_API_KEY` at
 runtime, and `.gitignore` keeps papers and generated summaries out of version
-control. Before publishing a fork, confirm nothing leaked:
-
-```bash
-grep -rlF "$TAMU_AI_API_KEY" .
-```
-
-No output means clean.
+control. 
 
 ## Usage
 
